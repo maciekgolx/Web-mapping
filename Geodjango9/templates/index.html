@@ -1,0 +1,85 @@
+<!-- templates/home.html-->
+{% extends 'base.html' %}
+{% load leaflet_tags %}
+{% block title %}Home{% endblock %}
+{% block content %}
+    {% if user.is_authenticated %}
+        <h2> Hi {{ user.username }}!</h2>
+        <style>
+            .leaflet-container {  /* all maps */
+                width:  90%;
+                height: 100%;
+                align-content: center;
+            }
+
+            #specialbigmap {
+                height: 90%;
+            }
+
+            /* Resize the "display_raw" textbox */
+            .django-leaflet-raw-textarea {
+                width: 100%;
+                height: 100%;
+                align-content: center;
+            }
+
+        </style>
+        <script>
+            function map_init_basic (map, options) {
+                var marker = L.marker([53.355, -6.28]).addTo(map);
+                marker.bindPopup("we are here!").openPopup();
+
+                var circle = L.circle([53.355, -6.28], {
+                    color: 'red',
+                    fillColor: '#f03',
+                    fillOpacity: 0.5,
+                    radius: 500
+                    }).addTo(map);
+                circle.bindPopup("Area of college")
+
+                var popup = L.popup()
+                    .setLatLng([53.355, -6.33])
+                    .setContent("Phoenix park")
+                    .openOn(map);
+
+                var polygon = L.polygon([
+                    [53.309, -6.28],
+                    [53.303, -6.26],
+                    [53.31, -6.247]
+                ]).addTo(map);
+                polygon.bindPopup("Most visited area")}
+                function update_db(pos) {
+                        let locString = pos.coords.longitude + ", " + pos.coords.latitude;
+
+                        $.ajax({
+                            type: "POST",
+                            headers: {
+                                'X-CSRFToken': getCookie('csrftoken')
+                            },
+                            url: HOST + "/updatedb/",
+                            data: {
+                                point: locString
+                            }
+                        }).done(function (data, status, xhr) {
+                            console.log(data["message"])
+                            let originalMsg = $(".toast-body").html();
+                            $(".toast-body").html(originalMsg + "<br/>Updated database<br/>" + data["message"]);
+
+                        }).fail(function (xhr, status, error) {
+                            console.log(error);
+                            let originalMsg = $(".toast-body").html();
+                            $(".toast-body").html(originalMsg + "<br/>" + error);
+                        }).always(function () {
+                            console.log("find_loc_ed finished");
+                            $(".toast").toast('show');
+                        });
+                    }
+        </script>
+        {% leaflet_map "yourmap" callback="window.map_init_basic" %}
+        <p><a href="">map</a></p>
+      <p><a href="{% url 'logout' %}">Log Out</a></p>
+    {% else %}
+      <p>You are not logged in</p>
+      <a href="{% url 'login' %}">Log In</a>
+    {% endif %}
+{% endblock %}
